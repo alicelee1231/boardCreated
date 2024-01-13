@@ -22,10 +22,14 @@ public class BoardController {
     }
 
     @PostMapping("/board/writepro")
-    public String boardWritePro(Board board){
-        System.out.println(board.getTitle());
+    public String boardWritePro(Board board, Model model){
+
         boardService.write(board);
-        return "";
+
+        model.addAttribute("message","글 작성이 완료되었습니다.");
+        model.addAttribute("searchUrl","/board/list");
+
+        return "message";
     }
 
     @GetMapping("/board/list")
@@ -35,7 +39,35 @@ public class BoardController {
     }
 
     @GetMapping("/board/view")
-    public String boardView(){
+    public String boardView(Model model,Integer id){
+        model.addAttribute("board",boardService.boardView(id));
         return "boardview";
+    }
+
+    @GetMapping("/board/delete")
+    public String boardDelete(Integer id){
+        boardService.boardDelete(id);
+        return "redirect:/board/list";
+    }
+
+    @GetMapping("/board/modify/{id}")
+    public String boardModify(@PathVariable("id") Integer id, Model model){
+        model.addAttribute("board",boardService.boardView(id));
+
+        return "boardmodify";
+    }
+    @PostMapping("/board/update/{id}")
+    public String boardUpdate(@PathVariable("id") Integer id, Board board, Model model){
+        Board boardTemp = boardService.boardView(id);        //기존의 내용
+        boardTemp.setTitle(board.getTitle()); //새로 입력한 내용을 덮어 씌우는 것
+        boardTemp.setContent(board.getContent());
+
+        boardService.write(boardTemp);
+
+        model.addAttribute("message","글 수정이 완료되었습니다.");
+        model.addAttribute("searchUrl","/board/list");
+
+
+        return "message";
     }
 }
