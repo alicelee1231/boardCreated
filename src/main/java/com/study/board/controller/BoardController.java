@@ -1,7 +1,11 @@
 package com.study.board.controller;
 
 import com.study.board.entity.Board;
+import com.study.board.repository.BoardRepository;
 import com.study.board.service.BoardService;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,18 +13,35 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 
 @Controller
+@Slf4j
 public class BoardController {
+
+    private static final Logger logger = LoggerFactory.getLogger(BoardService.class);
+
+    @GetMapping("/log")
+    public void log(){
+        log.info("trace message");
+        log.debug("debug message");
+        log.error("error message");
+        log.trace("trace message");
+        log.warn("warn message");
+    }
+
 
     @Autowired
     private BoardService  boardService;
+
+    @Autowired
+    private BoardRepository boardRepository;
 
     @GetMapping("/board/write")
     public String boardWriteForm(){
@@ -75,23 +96,31 @@ public class BoardController {
     }
 
     @GetMapping("/board/modify/{id}")
-    public String boardModify(@PathVariable("id") Integer id, Model model){
-        model.addAttribute("board",boardService.boardView(id));
+    public String boardModify(@PathVariable("id") Integer id, Model model) {
 
-        return "boardmodify";
+        try {
+            model.addAttribute("board", boardService.boardView(id));
+        } catch (Exception e) {
+            logger.error("modify error");
+        } return "boardmodify";
     }
+
     @PostMapping("/board/update/{id}")
-    public String boardUpdate(@PathVariable("id") Integer id, Board board, Model model, MultipartFile file) throws Exception{
+    public String boardUpdate( @PathVariable("id") Integer id, Board board, Model model,  MultipartFile file) throws Exception{
+
         Board boardTemp = boardService.boardView(id);        //기존의 내용
         boardTemp.setTitle(board.getTitle()); //새로 입력한 내용을 덮어 씌우는 것
         boardTemp.setContent(board.getContent());
+        if(ObjectUtils.isEmpty(file)) {
+            System.out.println("파일없이 저장합니다.");
+        }else {
 
-        boardService.write(boardTemp, file);
+            boardService.write(boardTemp, file);
 
-        model.addAttribute("message","글 수정이 완료되었습니다.");
-        model.addAttribute("searchUrl","/board/list");
-
-
+        }
+        model.addAttribute("message", "글 수정이 완료되었습니다.");
+        model.addAttribute("searchUrl", "/board/list");
+        boardRepository.save(board);
         return "message";
     }
 }
