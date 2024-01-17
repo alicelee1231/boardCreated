@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -29,11 +30,8 @@ public class BoardService {
 
         try {
             String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/files"; //저장경로지정
-            System.out.println(projectPath+"여기");
             UUID uuid = UUID.randomUUID(); //랜덤 UUID 생성
-            System.out.println(uuid +"여기");
             String fileName = uuid + "_" + file.getOriginalFilename(); //랜덤이름 저장
-            System.out.println(file+"여기");
             File saveFile = new File(projectPath, fileName);
 
             file.transferTo(saveFile);
@@ -64,4 +62,37 @@ public class BoardService {
     public void boardDelete(Integer id){
         boardRepository.deleteById(id);
     }
+
+    //게시글 업데이트
+    public String boardUpdate(Integer id, Board board, MultipartFile file, String filename, String filePath) throws Exception {
+
+        Board boardTemp = this.boardView(id);
+
+        //새로운 타이틀 및 내용으로 변경
+        boardTemp.setTitle(board.getTitle());
+        boardTemp.setContent(board.getContent());
+
+        //새로운 파일 패쓰 저장
+        boardTemp.setFilepath(board.getFilepath());
+        boardTemp.setFilename(board.getFilename());
+
+        if(ObjectUtils.isEmpty(file)){
+            String projectPath = System.getProperty("user.dir") + "/src/main/resources/static/files"; //저장경로지정
+            UUID uuid = UUID.randomUUID(); //랜덤 UUID 생성
+            String fileName = uuid + "_" + file.getOriginalFilename(); //랜덤이름 저장
+            File saveFile = new File(projectPath, fileName);
+
+            file.transferTo(saveFile);
+
+            board.setFilename(fileName);
+            board.setFilepath("/files/" + fileName);
+            boardRepository.save(board);
+        }else{
+            this.write(boardTemp, file);
+        }
+
+        return "message";
+    }
+
+
 }

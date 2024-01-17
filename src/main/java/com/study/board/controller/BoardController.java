@@ -4,6 +4,7 @@ import com.study.board.entity.Board;
 import com.study.board.repository.BoardRepository;
 import com.study.board.service.BoardService;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.weaver.patterns.TypePatternQuestions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.HashMap;
 
 
 @Controller
@@ -44,7 +47,8 @@ public class BoardController {
     private BoardRepository boardRepository;
 
     @GetMapping("/board/write")
-    public String boardWriteForm(){
+    public String boardWriteForm(Board board, Model model){
+
         return "boardwrite";
     }
 
@@ -71,7 +75,7 @@ public class BoardController {
         }else{
             list = boardService.boardSearchList(searchKeyword, pageable);
         }
-
+//
         int nowPage = list.getPageable().getPageNumber()+1;
         int startPage = Math.max(nowPage - 4, 1);
         int endPage = Math.min(nowPage + 5, list.getTotalPages());
@@ -105,20 +109,24 @@ public class BoardController {
         } return "boardmodify";
     }
 
+    @GetMapping("/board/modifyFile/{id}")
+    public String fileModify(@PathVariable("id")  Integer id, Model model, MultipartFile file) throws Exception {
+        model.addAttribute("message", "업로드 파일 수정 완료했습니다.");
+        return "message";
+    }
+
     @PostMapping("/board/update/{id}")
     public String boardUpdate( @PathVariable("id") Integer id, Board board, Model model,  MultipartFile file) throws Exception{
 
-        Board boardTemp = boardService.boardView(id);        //기존의 내용
-        boardTemp.setTitle(board.getTitle()); //새로 입력한 내용을 덮어 씌우는 것
-        boardTemp.setContent(board.getContent());
-        if(ObjectUtils.isEmpty(file)) {
-            System.out.println("파일없이 저장합니다.");
-        }else {
-
-            boardService.write(boardTemp, file);
-
-        }
         model.addAttribute("message", "글 수정이 완료되었습니다.");
+        model.addAttribute("searchUrl", "/board/list");
+        boardRepository.save(board);
+        return "message";
+    }
+    @PostMapping("/board/save")
+    public String boardSave(  Board board, Model model,  MultipartFile file) throws Exception{
+
+        model.addAttribute("message", "글 등록이 완료되었습니다.");
         model.addAttribute("searchUrl", "/board/list");
         boardRepository.save(board);
         return "message";
